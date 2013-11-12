@@ -1,43 +1,20 @@
-------------------------------------
---         Configuration          --
-------------------------------------
+------------------------------------------------
+--   My Awesome 3.5 configuration             --
+--    Author: Patrick Flick (github.com/r4d2) --
+------------------------------------------------
+-- Much of this configuration is `hacked` together
+-- and I took ideas from many different sources.
+-- Main features:
+--  - freedesktop menu
+--  - scratch drop down terminal
+--  - sweet modularized theme (part of it is `stolen` from
+--    copycat-killer `s awesome themes (https://github.com/copycat-killer/awesome-copycats)
+--  - widgets: CPU, mem, network, pulse audio control, and task list
+--  - separate files for configuration (config.lua) and autostart (autostart.lua)
 
--- default programs:
 
--- terminal:
-terminal = "x-terminal-emulator"
--- terminal for quake-style drop down list
-light_terminal = "xterm"
--- browser:
-browser="chromium-browser"
-
--- editor:
--- editor = os.getenv("EDITOR") or "editor"
-editor = "vim"
-editor_cmd = terminal .. " -e " .. editor
-
--- PULSE audio controller program, to be spawned when clicked on the audio control
-audio_controller = "pavucontrol"
--- pulse audio device for use in the audio control
--- get the device name with the command:
---    pactl list | grep -A2 'Source #' | grep 'Name: '
-audio_device = "alsa_output.pci-0000_00_07.0.analog-stereo"
-
--- network device for the up/download stats
--- net_device = "eth0"
-net_device = "eth0"
-
--- the theme to use (the folder in .config/awesome/themes/)
--- use_theme = "default"
-use_theme = "power3" -- my own theme!
-
--- whether or not to show the sysmon widgets
--- Consider: they can eat up system ressources, don't turn them on
--- on a laptop or such.
-show_sysmon_widgets = true
--- update interval for sysmon widgets, every X seconds
-sysmon_update_intervall = 2
-
+-- load configuration
+require("config")
 
 ------------------------------------
 --        Load Libraries          --
@@ -64,11 +41,11 @@ scratch = require("scratch")
 -- Load Debian menu entries
 
 -- Use Free Desktop for debian menu (https://github.com/terceiro/awesome-freedesktop)
-freedesktop = {}
-freedesktop.utils = require('freedesktop.utils')
+-- part of the repo as git submodule
+require('awesome-freedesktop.freedesktop.utils')
 freedesktop.utils.terminal = terminal  -- default: "xterm"
 freedesktop.utils.icon_theme = 'gnome' -- look inside /usr/share/icons/, default: nil (don't use icon theme)
-freedesktop.menu = require('freedesktop.menu')
+require('awesome-freedesktop.freedesktop.menu')
 
 
 
