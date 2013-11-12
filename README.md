@@ -12,9 +12,11 @@ Setting up the configuration:
 
   1. Get the configuration files:
   
+```
       git clone https://github.com/r4d2/awesome-config ~/.config/awesome
       git submodule init
       git submodule update
+```
     
   2. Customize environment by editing `config.lua`
   
