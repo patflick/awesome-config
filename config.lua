@@ -8,9 +8,11 @@
 -- default programs:
 
 -- terminal:
-terminal = "x-terminal-emulator"
+--terminal = "x-terminal-emulator"
+terminal = "urxvt"
 -- terminal for quake-style drop down list
-light_terminal = "xterm"
+--light_terminal = "xterm"
+light_terminal = "urxvt -tr -sh 50 -e zsh"
 -- browser:
 browser="chromium-browser"
 
