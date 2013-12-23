@@ -11,12 +11,12 @@ theme = {}
 theme.dir                                   = os.getenv("HOME") .. "/.config/awesome/themes/power3"
 theme.wallpaper                             = theme.dir .. "/wall.jpg"
 
-theme.font                                  = "Monospace 8"
-theme.taglist_font                          = "Monospace 9"
+theme.font                                  = "Terminus 8"
+theme.taglist_font                          = "Terminus 9"
 theme.fg_normal                             = "#D7D7D7"
 theme.fg_focus                              = "#62B1D0"
-theme.bg_normal                             = "#060606" 
-theme.bg_focus                              = "#060606" 
+theme.bg_normal                             = "#060606"
+theme.bg_focus                              = "#060606"
 theme.fg_urgent                             = "#CC9393"
 theme.bg_urgent                             = "#2A1F1E"
 theme.border_width                          = "1"
@@ -27,9 +27,9 @@ theme.graph_fg                              = "#CCCCCC"
 theme.widgets_bg_2                          = "#313131"
 
 theme.taglist_fg_focus                      = "#62B1D0"
-theme.taglist_bg_focus                      = "#060606" 
+theme.taglist_bg_focus                      = "#060606"
 theme.tasklist_fg_focus                     = "#62B1D0"
-theme.tasklist_bg_focus                     = "#060606" 
+theme.tasklist_bg_focus                     = "#060606"
 theme.textbox_widget_margin_top             = 0
 theme.awful_widget_height                   = 18
 theme.awful_widget_margin_top               = 0
@@ -38,7 +38,7 @@ theme.menu_width                            = "160"
 
 theme.menu_submenu_icon                     = theme.dir .. "/icons/submenu.png"
 
--- additions: 
+-- additions:
 theme.awesome_icon = "/usr/share/awesome/icons/awesome16.png"
 
 theme.taglist_squares_sel                   = theme.dir .. "/icons/square_sel.png"
@@ -82,11 +82,11 @@ theme.widget_vol_low                        = theme.dir .. "/icons/vol_low.png"
 theme.widget_vol_no                         = theme.dir .. "/icons/vol_no.png"
 theme.widget_vol_mute                       = theme.dir .. "/icons/vol_mute.png"
 theme.widget_mail                           = theme.dir .. "/icons/mail.png"
-theme.widget_mail_notify                    = theme.dir .. "/icons/mail_notify.png"          
+theme.widget_mail_notify                    = theme.dir .. "/icons/mail_notify.png"
 
 theme.tasklist_floating                     = ""
 theme.tasklist_maximized_horizontal         = ""
-theme.tasklist_maximized_vertical           = "" 
+theme.tasklist_maximized_vertical           = ""
 
 theme.widget_mail_notify                    = theme.dir .. "/icons/mail_notify.png"
 theme.widget_no_net_notify                  = theme.dir .. "/icons/no_net_notify.png"
