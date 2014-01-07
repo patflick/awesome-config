@@ -58,6 +58,9 @@ globalkeys = awful.util.table.join(
     -- Dropdown terminal
     awful.key({ modkey,           }, "`",     function () scratch.drop(light_terminal, "top", "center", 1, 0.1) end),
 
+    -- lock screen with Ctrl + Alt + L
+    awful.key({ "Mod1", "Control" }, "l",      function () awful.util.spawn(screensaver_lock) end),
+
     -- Prompt
     awful.key({ modkey },            "r",     function () mypromptbox[mouse.screen]:run() end),
 

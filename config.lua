@@ -15,6 +15,8 @@ terminal = "urxvt"
 light_terminal = "urxvt -tr -sh 50 -e zsh"
 -- browser:
 browser="chromium-browser"
+-- screensaver lock command
+screensaver_lock = "gnome-screensaver-command -l"
 
 -- editor:
 -- editor = os.getenv("EDITOR") or "editor"
@@ -26,7 +28,7 @@ audio_controller = "pavucontrol"
 -- pulse audio device for use in the audio control
 -- get the device name with the command:
 --    pactl list | grep -A2 'Source #' | grep 'Name: '
-audio_device = "alsa_output.pci-0000_00_07.0.analog-stereo"
+audio_device = "alsa_input.pci-0000_00_1b.0.analog-stereo"
 
 -- network device for the up/download stats
 -- net_device = "eth0"

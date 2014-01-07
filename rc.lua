@@ -56,7 +56,6 @@ require('awesome-freedesktop.freedesktop.menu')
 default_gradient_colors = {"#0000FF", "#00FFFF", "#00FF00", "#FFFF00", "#FF0000"}
 
 function get_linear_gradient_vert(height, colors)
-  
   result = { type = "linear", from = { 0, 0 }, to = { 0,  height}}
   stops = {}
   for i = 0, #colors - 1 do
