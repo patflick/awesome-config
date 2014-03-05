@@ -122,6 +122,69 @@ function sysmon.get_vol_widget(beautiful, use_icon, use_graphs, audio_device)
     return vol_widget_layout
 end
 
+function sysmon.get_bat_widget(beautiful, use_icon, use_graphs)
+    -- create layout
+    local bat_widget_layout = wibox.layout.fixed.horizontal()
+
+    -- add icon
+    if use_icon then
+        bat_icon = wibox.widget.imagebox(beautiful.widget_battery)
+        bat_widget_layout:add(bat_icon)
+    end
+
+    -- add textual part
+    local bat_text = wibox.widget.textbox()
+    bat_widget_layout:add(bat_text)
+
+    -- add tooltip
+    local bat_tt = awful.tooltip({objects={bat_text},})
+
+    -- create a batory widget for vicious
+    -- Initialize widget
+    if use_graphs then
+        local batwidget = awful.widget.progressbar()
+        -- Progressbar properties
+        batwidget:set_width(4)
+        --batwidget:set_height(10)
+        batwidget:set_vertical(true)
+        batwidget:set_background_color(beautiful.graph_bg)
+        batwidget:set_border_color(nil)
+        -- batwidget:set_color(get_default_gradient(40))
+        batwidget:set_color(beautiful.graph_fg)
+        -- Register widget
+        vicious.register(batwidget, vicious.widgets.bat, "$2", update_intervall, "BAT0")
+        bat_widget_layout:add(batwidget)
+    end
+
+    local pseudowidget = wibox.widget.textbox()
+
+    vicious.register(pseudowidget, vicious.widgets.bat,
+        function (widget, args)
+            local perc = args[2]
+            local time = args[3]
+            local status = args[1]
+            if use_icon then
+                bat_text:set_text(string.format(status .. " %3u%% ", perc))
+            else
+                bat_text:set_text(string.format("bat: " .. status .. " %3u%% ", perc))
+            end
+            -- set tooltip to remaining time
+            bat_tt:set_text("Time remaining: " .. time)
+
+            -- set icon
+            if use_icon then
+                if perc < 10 then
+                    bat_icon:set_image(beautiful.widget_battery_empty)
+                elseif bat <= 40 then
+                    bat_icon:set_image(beautiful.widget_battery_low)
+                else
+                    bat_icon:set_image(beautiful.widget_battery)
+                end
+            end
+        end
+      , update_intervall, "BAT0")
+    return bat_widget_layout
+end
 
 function sysmon.get_mem_widget(beautiful, use_icon, use_graphs)
     -- create layout
@@ -225,7 +288,7 @@ function sysmon.get_cpu_widget(beautiful, use_icon, use_graphs, graph_vertical)
     local cpu_pseudowidget = wibox.widget.textbox()
 
     -- register cpuwidgets
-    vicious.register(cpu_pseudowidget , vicious.widgets.cpu, 
+    vicious.register(cpu_pseudowidget , vicious.widgets.cpu,
         function (widget, args)
             -- display the total cpu consumption sum in text field
             local cpu_sum = 0
@@ -259,7 +322,6 @@ function sysmon.get_net_widgets(beautiful, use_icon, use_graphs, net_device)
 
     -- create the horizontal layout for the network widgets
     local netwidgets = {}
-    
 
     local net_texts = {nil, nil}
 
@@ -321,7 +383,12 @@ function sysmon.get_widgets(beautiful, use_icon, use_graphs, update_intervall, n
     -- get network widget
     local netwidget1, netwidget2 = sysmon.get_net_widgets(beautiful, use_icon, false, net_device)
 
-    return {netwidget1, netwidget2, memwidget, cpuwidget}
+    -- get battery widget but only if there is a battery
+    if (vicious.widgets.bat("", "BAT0")[2] > 0) then
+        batwidget = sysmon.get_bat_widget(beautiful, use_icon, true)
+    end
+
+    return {netwidget1, netwidget2, memwidget, cpuwidget, batwidget}
 end
 
 return sysmon

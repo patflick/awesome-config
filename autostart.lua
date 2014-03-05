@@ -61,3 +61,5 @@ run_once('system-config-printer-applet')
 -- automount (gnome fallback dependency!)
 run_once('/usr/lib/gnome-settings-daemon/gnome-fallback-mount-helper')
 
+-- touchpad settings app
+run_once('/opt/extras.ubuntu.com/touchpad-indicator/bin/touchpad-indicator')

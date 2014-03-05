@@ -11,7 +11,7 @@ theme = {}
 theme.dir                                   = os.getenv("HOME") .. "/.config/awesome/themes/power3"
 theme.wallpaper                             = theme.dir .. "/wall.jpg"
 
-theme.font                                  = "Terminus 8"
+theme.font                                  = "DejaVu Sans Mono 8"
 theme.taglist_font                          = "Terminus 9"
 theme.fg_normal                             = "#D7D7D7"
 theme.fg_focus                              = "#62B1D0"

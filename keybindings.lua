@@ -1,14 +1,24 @@
 
--- {{{ Mouse bindings
+------------------------------------------------------------------------
+--                       Mouse button bindings                        --
+------------------------------------------------------------------------
+
 root.buttons(awful.util.table.join(
     awful.button({ }, 3, function () mymainmenu:toggle() end),
     awful.button({ }, 4, awful.tag.viewnext),
     awful.button({ }, 5, awful.tag.viewprev)
 ))
--- }}}
 
--- {{{ Key bindings
+------------------------------------------------------------------------
+--                        Gloabal key bindings                        --
+------------------------------------------------------------------------
+
 globalkeys = awful.util.table.join(
+
+    ------------------------------------------
+    --  mostly default awesome keybindings  --
+    ------------------------------------------
+
     awful.key({ modkey,           }, "Left",   awful.tag.viewprev       ),
     awful.key({ modkey,           }, "Right",  awful.tag.viewnext       ),
     awful.key({ modkey,           }, "Escape", awful.tag.history.restore),
@@ -55,23 +65,60 @@ globalkeys = awful.util.table.join(
 
     awful.key({ modkey, "Control" }, "n", awful.client.restore),
 
-    -- Dropdown terminal
-    awful.key({ modkey,           }, "`",     function () scratch.drop(light_terminal, "top", "center", 1, 0.1) end),
-
-    -- lock screen with Ctrl + Alt + L
-    awful.key({ "Mod1", "Control" }, "l",      function () awful.util.spawn(screensaver_lock) end),
-
     -- Prompt
-    awful.key({ modkey },            "r",     function () mypromptbox[mouse.screen]:run() end),
+    awful.key({ modkey },            "r", function ()
+        mypromptbox[mouse.screen]:run() end),
 
+    -- Lua promt
     awful.key({ modkey }, "x",
               function ()
                   awful.prompt.run({ prompt = "Run Lua code: " },
                   mypromptbox[mouse.screen].widget,
                   awful.util.eval, nil,
                   awful.util.getdir("cache") .. "/history_eval")
-              end)
+              end),
+    ---------------------------------------
+    --  Custom application key bindings  --
+    ---------------------------------------
+
+    -- Dropdown terminal
+    awful.key({ modkey,           }, "`", function ()
+        scratch.drop(light_terminal, "top", "center", 1, 0.1) end),
+
+    -- lock screen with Ctrl + Alt + L
+    awful.key({ "Mod1", "Control" }, "l", function ()
+        awful.util.spawn(screensaver_lock) end),
+
+
+    ---------------------
+    --  function keys  --
+    ---------------------
+
+    -- Brightness
+    awful.key({ }, "XF86MonBrightnessDown", function ()
+            awful.util.spawn("xbacklight -dec 15") end),
+
+    awful.key({ }, "XF86MonBrightnessUp", function ()
+            awful.util.spawn("xbacklight -inc 15") end),
+
+    -- Volume control
+    awful.key({ }, "XF86AudioRaiseVolume", function()
+            vicious.contrib.pulse.add(5) end),
+
+    awful.key({ }, "XF86AudioLowerVolume", function()
+            vicious.contrib.pulse.add(-5) end),
+
+    awful.key({ }, "XF86AudioMute", function()
+            vicious.contrib.pulse.toggle() end),
+
+    awful.key({ }, "XF86AudioMicMute", function()
+            awful.util.spawn("amixer set Capture toggle") end)
+
 )
+
+------------------------------------------------------------------------
+--                         client window keys                         --
+------------------------------------------------------------------------
 
 clientkeys = awful.util.table.join(
     awful.key({ modkey,           }, "f",      function (c) c.fullscreen = not c.fullscreen  end),
@@ -81,18 +128,26 @@ clientkeys = awful.util.table.join(
     awful.key({ modkey,           }, "o",      awful.client.movetoscreen                        ),
     awful.key({ modkey, "Shift"   }, "r",      function (c) c:redraw()                       end),
     awful.key({ modkey,           }, "t",      function (c) c.ontop = not c.ontop            end),
+    -- minimize the window
     awful.key({ modkey,           }, "n",
         function (c)
             -- The client currently has the input focus, so it cannot be
             -- minimized, since minimized clients can't have the focus.
             c.minimized = true
         end),
+    -- maximize the window
     awful.key({ modkey,           }, "m",
         function (c)
             c.maximized_horizontal = not c.maximized_horizontal
             c.maximized_vertical   = not c.maximized_vertical
         end)
 )
+
+
+------------------------------------------------------------------------
+--                 tag bar keybindings (1,2,3,..,9,0)                 --
+------------------------------------------------------------------------
+
 
 -- Compute the maximum number of digit we need, limited to 9
 keynumber = 0
