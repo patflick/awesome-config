@@ -173,14 +173,16 @@ function sysmon.get_bat_widget(beautiful, use_icon, use_graphs)
 
             -- set icon
             if use_icon then
-                if perc < 10 then
+                if perc < 20 then
                     bat_icon:set_image(beautiful.widget_battery_empty)
-                elseif bat <= 40 then
+                elseif perc <= 50 then
                     bat_icon:set_image(beautiful.widget_battery_low)
                 else
                     bat_icon:set_image(beautiful.widget_battery)
                 end
             end
+
+            return ""
         end
       , update_intervall, "BAT0")
     return bat_widget_layout

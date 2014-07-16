@@ -15,8 +15,22 @@ terminal = "urxvt"
 light_terminal = "urxvt -tr -sh 50 -e zsh"
 -- browser:
 browser="chromium-browser"
+
+--------------------------
+--  session management  --
+--------------------------
+
 -- screensaver lock command
 screensaver_lock = "gnome-screensaver-command -l"
+
+-- shutdown, restart and hybernate (using ubus, ConsoleKit and UPower)
+shutdown_command = 'dbus-send --system --print-reply --dest="org.freedesktop.ConsoleKit" /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Stop'
+reboot_command = 'dbus-send --system --print-reply --dest="org.freedesktop.ConsoleKit" /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Restart'
+suspend_command = 'dbus-send --system --print-reply --dest="org.freedesktop.UPower" /org/freedesktop/UPower org.freedesktop.UPower.Suspend'
+suspend_command = 'dbus-send --system --print-reply --dest="org.freedesktop.UPower" /org/freedesktop/UPower org.freedesktop.UPower.Hibernate'
+
+
+
 
 -- editor:
 -- editor = os.getenv("EDITOR") or "editor"
@@ -28,6 +42,7 @@ audio_controller = "pavucontrol"
 -- pulse audio device for use in the audio control
 -- get the device name with the command:
 --    pactl list | grep -A2 'Source #' | grep 'Name: '
+-- TODO: might be deprecated:
 audio_device = "alsa_input.pci-0000_00_1b.0.analog-stereo"
 
 -- network device for the up/download stats
