@@ -162,8 +162,7 @@ tags[1] = awful.tag(s1_tags, 1, default_layouts)
 if (screen.count() > 1) then
     -- second screen
     s2_tags = default_tags
-    s2_tags[3] = "music"
-    s2_tags[4] = "torrent"
+    -- s2_tags[3] = "music"
     tags[2] = awful.tag(s2_tags, 2, default_layouts)
 end
 
