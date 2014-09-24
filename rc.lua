@@ -431,15 +431,6 @@ awful.rules.rules = {
 -- }}}
 
 
-if screen.count() > 1 then
-table.insert(awful.rules.rules,
-      { rule = {class = "Rhythmbox" },
-        properties = { tag = tags[2][3]}})
-table.insert(awful.rules.rules,
-    { rule = { class = "Qbittorrent" },
-        properties = { tag = tags[2][4]}})
-end
-
 -- {{{ Signals
 -- Signal function to execute when a new client appears.
 client.connect_signal("manage", function (c, startup)
