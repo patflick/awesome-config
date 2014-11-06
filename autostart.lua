@@ -24,6 +24,16 @@ local function run_once(prg,arg_string,pname,screen)
 end
 
 
+--------------------------------------------------------
+-- automatically lock screen (settings in config.lua) --
+--------------------------------------------------------
+
+require("config")
+run_once('xautolock', '-time ' ..  screen_autolock_time
+                      .. ' -locker "' .. screen_lock_cmd
+                      .. '" -notifier "' .. screen_autolock_warn_msg
+                      .. '" -notify ' .. screen_autolock_warn_sec)
+
 -------------------------------------------------------
 -- start the applications                            --
 -- modify this to your preferences                   --
@@ -41,9 +51,6 @@ run_once('/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1')
 
 -- start dropbox
 run_once('dropbox', 'start')
-
--- start productivity app Tomate (https://launchpad.net/tomate/)
-run_once('tomate')
 
 -- update notifications
 run_once('update-notifier')

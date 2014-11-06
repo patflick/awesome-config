@@ -77,6 +77,19 @@ globalkeys = awful.util.table.join(
                   awful.util.eval, nil,
                   awful.util.getdir("cache") .. "/history_eval")
               end),
+
+------------------------------------------------------------------------
+--                           Renaming tags                            --
+------------------------------------------------------------------------
+
+   awful.key({ modkey, }, "g",
+      function ()
+           awful.prompt.run({ prompt = "Rename tag: ", text = awful.tag.selected().name, },
+              mypromptbox[mouse.screen].widget,
+              function (s)
+                  awful.tag.selected().name = s
+              end)
+      end),
     ---------------------------------------
     --  Custom application key bindings  --
     ---------------------------------------
@@ -87,7 +100,7 @@ globalkeys = awful.util.table.join(
 
     -- lock screen with Ctrl + Alt + L
     awful.key({ "Mod1", "Control" }, "l", function ()
-        awful.util.spawn(screensaver_lock) end),
+        awful.util.spawn(screen_lock_cmd) end),
 
 
     ---------------------
@@ -187,6 +200,13 @@ for i = 1, keynumber do
                       end
                   end))
 end
+
+
+
+
+------------------------------------------------------------------------
+--             Resizing and reordering windows with mouse             --
+------------------------------------------------------------------------
 
 clientbuttons = awful.util.table.join(
     awful.button({ }, 1, function (c) client.focus = c; c:raise() end),
