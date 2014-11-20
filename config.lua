@@ -24,9 +24,9 @@ browser="chromium-browser"
 -- screen_lock_cmd = "gnome-screensaver-command -l"
 screen_lock_cmd = "i3lock -c 000000"
 -- auto lock after 5 minutes
-screen_autolock_time = "5"
-screen_autolock_warn_sec = 10
-screen_autolock_warn_msg = "notify-send -u critical 'LOCKING in " .. screen_autolock_warn_sec .. " seconds'"
+screen_autolock_time = "1"
+screen_autolock_warn_sec = "10"
+
 
 -- shutdown, restart and hybernate (using ubus, ConsoleKit and UPower)
 shutdown_command = 'dbus-send --system --print-reply --dest="org.freedesktop.ConsoleKit" /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Stop'

@@ -29,9 +29,12 @@ end
 --------------------------------------------------------
 
 require("config")
+--screen_autolock_warn_cmd = "notify-send -t " .. screen_autolock_warn_sec .. " -u critical 'LOCKING in " .. screen_autolock_warn_sec .. " seconds'"
+screen_autolock_warn_cmd = "echo \\\"naughty.notify({preset = naughty.config.presets.critical,text='LOCKING IN "
+.. screen_autolock_warn_sec ..  " s', timeout=".. screen_autolock_warn_sec .. "})\\\" | awesome-client"
 run_once('xautolock', '-time ' ..  screen_autolock_time
                       .. ' -locker "' .. screen_lock_cmd
-                      .. '" -notifier "' .. screen_autolock_warn_msg
+                      .. '" -notifier "' .. screen_autolock_warn_cmd
                       .. '" -notify ' .. screen_autolock_warn_sec)
 
 -------------------------------------------------------

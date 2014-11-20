@@ -13,8 +13,6 @@
 --  - separate files for configuration (config.lua) and autostart (autostart.lua)
 
 
--- load configuration
-require("config")
 
 ------------------------------------
 --        Load Libraries          --
@@ -29,7 +27,7 @@ awful.rules = require("awful.rules")
 beautiful = require("beautiful")
 gears = require("gears")
 -- Notification library
-require("naughty")
+naughty = require("naughty")
 
 -- load delightful widgets
 vicious = require("vicious")
@@ -37,6 +35,10 @@ vicious = require("vicious")
 -- load scratch for drop-down terminal:
 --  src (http://awesome.naquadah.org/wiki/Scratchpad_manager)
 scratch = require("scratch")
+
+
+-- load user configuration
+require("config")
 
 -- Load Debian menu entries
 

@@ -13,6 +13,7 @@ root.buttons(awful.util.table.join(
 --                        Gloabal key bindings                        --
 ------------------------------------------------------------------------
 
+require('naughty')
 globalkeys = awful.util.table.join(
 
     ------------------------------------------
@@ -101,6 +102,9 @@ globalkeys = awful.util.table.join(
     -- lock screen with Ctrl + Alt + L
     awful.key({ "Mod1", "Control" }, "l", function ()
         awful.util.spawn(screen_lock_cmd) end),
+
+   -- testing naughty
+    awful.key({ modkey,           }, "u", function() naughty.notify({ text="notification content"}) end),
 
 
     ---------------------
