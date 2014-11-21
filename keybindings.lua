@@ -14,6 +14,9 @@ root.buttons(awful.util.table.join(
 ------------------------------------------------------------------------
 
 require('naughty')
+xrandr = require('xrandr')
+table.insert(menu_items, {"xrandr", xrandr.menu()})
+
 globalkeys = awful.util.table.join(
 
     ------------------------------------------
@@ -35,6 +38,12 @@ globalkeys = awful.util.table.join(
             if client.focus then client.focus:raise() end
         end),
     awful.key({ modkey,           }, "w", function () mymainmenu:show({keygrabber=true}) end),
+    awful.key({ modkey,           }, "d",
+       function ()
+          -- create new xrandr menu (to have most recent changes), and display it
+          xrandrmenu = awful.menu.new({ items = xrandr.menu() })
+          xrandrmenu:show({keygrabber=true})
+       end),
 
     -- Layout manipulation
     awful.key({ modkey, "Shift"   }, "j", function () awful.client.swap.byidx(  1)    end),

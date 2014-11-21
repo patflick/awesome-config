@@ -193,6 +193,7 @@ myawesomemenu = {
 table.insert(menu_items, { "awesome", myawesomemenu, beautiful.awesome_icon })
 table.insert(menu_items, { "open terminal", terminal, freedesktop.utils.lookup_icon({icon = 'terminal'}) })
 
+
 mymainmenu = awful.menu.new({ items = menu_items })
 
 
