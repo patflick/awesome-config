@@ -206,6 +206,8 @@ mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
 -- {{{ Wibox
 -- Create a textclock widget
 mytextclock = awful.widget.textclock()
+require('calendar2')
+calendar2.addCalendarToWidget(mytextclock, "<span color='" .. beautiful.fg_focus .."'><u>%s</u></span>")
 
 -- Create a systray
 mysystray = wibox.widget.systray()
