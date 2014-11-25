@@ -9,6 +9,29 @@ local function round(num, idp)
     return math.floor(num * mult + 0.5) / mult
 end
 
+function gradient(color, to_color, min, max, value)
+    local function color2dec(c)
+        return tonumber(c:sub(2,3),16), tonumber(c:sub(4,5),16), tonumber(c:sub(6,7),16)
+    end
+
+    local factor = 0
+    if (value >= max ) then 
+        factor = 1  
+    elseif (value > min ) then 
+        factor = (value - min) / (max - min)
+    end 
+
+    local red, green, blue = color2dec(color) 
+    local to_red, to_green, to_blue = color2dec(to_color) 
+
+    red   = red   + (factor * (to_red   - red))
+    green = green + (factor * (to_green - green))
+    blue  = blue  + (factor * (to_blue  - blue))
+
+    -- dec2color
+    return string.format("#%02x%02x%02x", red, green, blue)
+end
+
 local function net_string(kb_value)
     local prefixes = {"kbs","Mbs","Gbs","Tbs"}
     local cur_prefix = 1
@@ -231,7 +254,165 @@ function sysmon.get_mem_widget(beautiful, use_icon, use_graphs)
     return mem_widget_layout
 end
 
+local mouse=require('mouse')
+local tm = require('timer')
+
+-- save the popups once created, so that they don't have to be created
+-- from scratch every time it opens
+local popups = {}
+
+function sysmon.cpu_popup(args)
+    local values = args.values
+    local cpupopup
+    local graph_width = 200
+    local graph_height = 100
+    local stats_cmd = '/bin/ps --sort=-%cpu,-%mem -eo fname,%cpu,%mem | head -n 6'
+    local title = 'CPU'
+    local max_value = 400
+
+    local max_val = max_value or 100
+
+    local function update()
+        -- update graph data
+        local data = vicious.widgets.cpu()
+        if #data > 1 then
+            for i = 1, #data do
+                cpupopup.graph:add_value(data[i],i)
+            end
+        else
+            cpupopup.graph:add_value(data)
+        end
+        -- update stats
+        if stats_cmd then
+            -- get new stats and assign to textbox
+            local stats = awful.util.pread(stats_cmd)
+            if stats:sub(-1) == '\n' then
+                stats = stats:sub(1,-2) -- trim trailing character
+            end
+            cpupopup.stats:set_markup(stats)
+        end
+    end
+
+    if not popups.cpu then
+        cpupopup = {}
+        -- create wibox
+        cpupopup.box = wibox({fg = beautiful.fg_normal, bg=beautiful.bg_normal, type="notification"})
+        cpupopup.box.ontop = true
+
+        -- create graph(s)
+        if args.values.groups then
+            cpupopup.graph = awful.widget.graph()
+            cpupopup.graph:set_width(graph_width)
+            cpupopup.graph:set_height(graph_height)
+            cpupopup.graph:set_background_color(beautiful.background_normal)
+            cpupopup.graph:set_stack(true)
+            -- generate colors based on color gradient
+            local stack_colors = {}
+            for i = 1, #values.groups do
+                table.insert(stack_colors, gradient(beautiful.bg_normal, beautiful.fg_focus, 0, #values.groups+3, i+2))
+            end
+            cpupopup.graph:set_stack_colors(stack_colors);
+            cpupopup.graph:set_max_value(max_val)
+            cpupopup.graph:set_border_color(beautiful.fg_focus)
+        else
+            cpupopup.graph = awful.widget.graph()
+            cpupopup.graph:set_width(graph_width)
+            cpupopup.graph:set_height(graph_height)
+            cpupopup.graph:set_background_color(beautiful.bg_normal)
+            cpupopup.graph:set_color(gradient(beautiful.bg_normal, beautiful.fg_focus, 0, 3, 2))
+            cpupopup.graph:set_max_value(max_val)
+            cpupopup.graph:set_border_color(beautiful.fg_focus)
+        end
+
+        cpupopup.stats = wibox.widget.textbox()
+        local stats_marg = wibox.layout.margin()
+        stats_marg:set_widget(cpupopup.stats)
+        stats_marg:set_margins(3)
+        local graph_marg = wibox.layout.margin()
+        graph_marg:set_widget(cpupopup.graph)
+        graph_marg:set_margins(5)
+        cpupopup.lay = wibox.layout.fixed.vertical()
+        cpupopup.lay:add(wibox.widget.textbox("<span color='" .. beautiful.fg_focus .. "'><b> " .. title .. "</b></span>"))
+        cpupopup.lay:add(graph_marg)
+        cpupopup.lay:add(stats_marg)
+
+        cpupopup.mar = wibox.layout.margin()
+        cpupopup.mar:set_margins(2)
+        cpupopup.mar:set_widget(cpupopup.lay)
+        -- add cpupopup to wibox
+        cpupopup.box:set_widget(cpupopup.mar)
+
+
+        -- create timer
+        -- TODO: only one timer per system component (cpu,mem)
+        --       otherwise the measurement data interferes with each other
+        local tm = timer({ timeout = 1 })
+        if tm.connect_signal then
+            tm:connect_signal("timeout", update)
+        else
+            tm:add_signal("timeout", update)
+        end
+        cpupopup.timer = tm
+
+        -- cache the popup wibox and widgets
+        popups.cpu = cpupopup
+    else
+        -- retrieve cached widget
+        cpupopup = popups.cpu
+
+        -- prefill graph with zeros if not full
+        if args.values.groups then
+            if #values.groups[1] < graph_width then
+                for i = #values.groups[1]+1, graph_width do
+                    for g = 1, #values.groups do
+                        cpupopup.graph:add_value(0, g)
+                    end
+                end
+            end
+        else
+            if #values < graph_width then
+                for i = #values+1, graph_width do
+                    cpupopup.graph:add_value(0)
+                end
+            end
+        end
+    end
+
+    -- get new stats and assign to textbox
+    local stats = awful.util.pread(stats_cmd)
+    if stats:sub(-1) == '\n' then
+        stats = stats:sub(1,-2) -- trim trailing character
+    end
+    cpupopup.stats:set_markup(stats)
+
+    -- figure out how big the widget is
+    local w, h = wibox.layout.base.fit_widget(cpupopup.mar,1000,1000)
+    -- set the wibox size accordingly
+    cpupopup.box:geometry({width=w,height=h,x=mouse.coords().x,y=beautiful.awful_widget_height})
+    -- fill graph
+    if args.values.groups then
+        for i = 1, #values.groups[1] do
+            for g = 1, #values.groups do
+                cpupopup.graph:add_value(values.groups[g][i], g)
+            end
+        end
+    else
+        for i = 1, #values do
+            cpupopup.graph:add_value(values[i])
+        end
+    end
+    cpupopup.box.visible = true
+    cpupopup.timer:start()
+    return cpupopup
+end
+
+function sysmon.close_popup(popup)
+    popup.timer:stop()
+    popup.box.visible = false
+end
+
 function sysmon.get_cpu_widget(beautiful, use_icon, use_graphs, graph_vertical)
+    vicious.cache(vicious.widgets.cpu)
     -- create layout
     local cpu_widget_layout = wibox.layout.fixed.horizontal()
 
@@ -244,8 +425,6 @@ function sysmon.get_cpu_widget(beautiful, use_icon, use_graphs, graph_vertical)
 
     -- create cpu text widget
     cpu_text = wibox.widget.textbox()
-    cpu_text.width = 80
-
     cpu_widget_layout:add(cpu_text)
 
     -- add graphs
@@ -288,11 +467,22 @@ function sysmon.get_cpu_widget(beautiful, use_icon, use_graphs, graph_vertical)
 
     -- create pseudo widget
     local cpu_pseudowidget = wibox.widget.textbox()
+    cpu_pseudowidget.values = {}
+
+    if n_cpus > 1 then
+        cpu_pseudowidget.values.groups = {}
+        for i = 1, n_cpus do
+            cpu_pseudowidget.values.groups[i] = {}
+        end
+    end
+
+    local popup = {}
 
     -- register cpuwidgets
     vicious.register(cpu_pseudowidget , vicious.widgets.cpu,
         function (widget, args)
             -- display the total cpu consumption sum in text field
+            -- -- TODO: variable!
             local cpu_sum = 0
             for i = 1, n_cpus do
                 cpu_sum = cpu_sum + args[i+1]
@@ -309,9 +499,26 @@ function sysmon.get_cpu_widget(beautiful, use_icon, use_graphs, graph_vertical)
                     cpu_bars_widgets[i]:set_value(args[i+1])
                 end
             end
+            -- add total value to value memory
+            -- TODO: impelement as circular buffer for efficiency
+            if n_cpus > 1 then
+                for i = 1, n_cpus do
+                    table.insert(cpu_pseudowidget.values.groups[i], args[i+1])
+                end
+            else
+                table.insert(cpu_pseudowidget.values, cpu_sum)
+            end
+            -- TODO: clear old values
             return ""
         end
         , 1)
+
+    cpu_widget_layout:connect_signal('mouse::enter', function ()
+        popup = sysmon.cpu_popup({values = cpu_pseudowidget.values})
+    end)
+    cpu_widget_layout:connect_signal('mouse::leave', function ()
+        sysmon.close_popup(popup)
+    end)
 
     return cpu_widget_layout
 end
@@ -383,7 +590,7 @@ function sysmon.get_widgets(beautiful, use_icon, use_graphs, update_intervall, n
     local memwidget = sysmon.get_mem_widget(beautiful, use_icon, true)
 
     -- get network widget
-    local netwidget1, netwidget2 = sysmon.get_net_widgets(beautiful, use_icon, false, net_device)
+    local netwidget1, netwidget2 = sysmon.get_net_widgets(beautiful, use_icon, true, net_device)
 
     -- get battery widget but only if there is a battery
     if (vicious.widgets.bat("", "BAT0")[2] > 0) then

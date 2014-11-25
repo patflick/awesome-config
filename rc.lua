@@ -68,7 +68,6 @@ function get_linear_gradient_vert(height, colors)
 end
 
 function get_linear_gradient_horiz(width, colors)
-  
   result = { type = "linear", from = { 0, 0 }, to = { width,  0}}
   stops = {}
   for i = 0, #colors - 1 do
@@ -367,7 +366,7 @@ for s = 1, screen.count() do
 
 
     -- Create the wibox
-    mywiboxtop[s] = awful.wibox({ position = "top", screen = s })
+    mywiboxtop[s] = awful.wibox({ position = "top", height=beautiful.awful_widget_height, screen = s })
     -- Add widgets to the wibox - order matters
 
     local left_layout = wibox.layout.fixed.horizontal()
