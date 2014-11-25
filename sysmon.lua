@@ -279,16 +279,14 @@ local tm = require('timer')
 -- from scratch every time it opens
 local popups = {}
 
--- TODO: split up into create (including binding to a widget)
---       and show/hide (activate/deactivate)
--- TODO: bind upon creation of sysmon widgets
+
 function sysmon.create_popup(widget, args)
     --local values = args.values or nil
     local graph_width = args.graph_width or 200
     local graph_height = args.graph_height or 100
     local stats_cmd = args.stats_cmd or nil
     local title = args.title or ''
-    local max_value = args.max_value or 100
+    local max_value = args.max_value
     local stack = args.stack or false
     local popup = {}
     local data_fun = args.data_function or nil
@@ -334,6 +332,13 @@ function sysmon.create_popup(widget, args)
         else
             ng = 1
         end
+    end
+
+    -- default max
+    if max_value == nil and stack then
+        max_value = 100*ng
+    else
+        max_value = 100
     end
 
     -- get number of data rows (i.e., number of stacks or number of graphs)
