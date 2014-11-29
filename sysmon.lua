@@ -216,60 +216,67 @@ end
 
 function sysmon.get_mem_widget(beautiful, use_icon, use_graphs)
     -- create layout
-    local mem_widget_layout = wibox.layout.fixed.horizontal()
+    local mem_widget = wibox.layout.fixed.horizontal()
 
     -- add icon
     if use_icon then
-        mem_widget_layout:add(wibox.widget.imagebox(beautiful.widget_mem))
+        mem_widget:add(wibox.widget.imagebox(beautiful.widget_mem))
     end
 
     -- add textual part
     local mem_text = wibox.widget.textbox()
-    mem_widget_layout.values = {}
-    vicious.register(mem_text, vicious.widgets.mem,
-        function (widget, args)
-            table.insert(mem_widget_layout.values, args[1])
-            if use_icon then
-                return string.format("%3u%% ", args[1])
-            else
-                return string.format("mem: %3u%% ", args[1])
-            end
-        end
-      , 1)
-
-    mem_widget_layout:add(mem_text)
+    mem_widget:add(mem_text)
 
     -- create a memory widget for vicious
     -- Initialize widget
     if use_graphs then
-        local memwidget = awful.widget.progressbar()
+        local graph = awful.widget.progressbar()
         -- Progressbar properties
-        memwidget:set_width(4)
-        --memwidget:set_height(10)
-        memwidget:set_vertical(true)
-        memwidget:set_background_color(beautiful.graph_bg)
-        memwidget:set_border_color(nil)
-        -- memwidget:set_color(get_default_gradient(40))
-        memwidget:set_color(beautiful.graph_fg)
-        -- Register widget
-        vicious.register(memwidget, vicious.widgets.mem, "$1", update_intervall)
-        mem_widget_layout:add(memwidget)
+        graph:set_width(4)
+        --graph:set_height(10)
+        graph:set_vertical(true)
+        graph:set_max_value(100)
+        graph:set_background_color(beautiful.graph_bg)
+        graph:set_border_color(nil)
+        -- graph:set_color(get_default_gradient(40))
+        graph:set_color(beautiful.graph_fg)
+        mem_widget:add(graph)
+        mem_widget.graph = graph
     end
 
     -- create popup
-    local popup = sysmon.create_popup(mem_widget_layout, {
+    mem_widget.popup = sysmon.create_popup(mem_widget, {
             stats_cmd = '/bin/ps --sort=-%mem -eo fname,%mem | head -n 6',
             stack = false,
             title = 'RAM',
-            -- TODO: make sure the widgets.mem() function is only called once
-            -- per iteration
-            data_function = function ()
-                local data = vicious.widgets.mem()
-                return data[1]
-            end })
+            number_graphs = 1
+             })
+
+    mem_widget.update = function()
+        local args = vicious.widgets.mem()
+        if use_icon then
+            mem_text:set_text(string.format("%3u%% ", args[1]))
+        else
+            mem_text:set_text(string.format("mem: %3u%% ", args[1]))
+        end
+        if use_graphs then
+            mem_widget.graph:set_value(args[1])
+        end
+        mem_widget.popup.update(args[1])
+    end
+
+    -- create timer
+    local tm = timer({ timeout = 5 })
+    if tm.connect_signal then
+        tm:connect_signal("timeout", mem_widget.update)
+    else
+        tm:add_signal("timeout", mem_widget.update)
+    end
+    mem_widget.timer = tm
+    mem_widget.timer:start()
 
     -- return widget
-    return mem_widget_layout
+    return mem_widget
 end
 
 local mouse=require('mouse')
@@ -289,32 +296,49 @@ function sysmon.create_popup(widget, args)
     local max_value = args.max_value
     local stack = args.stack or false
     local popup = {}
-    local data_fun = args.data_function or nil
 
     -- save some parameters
     popup.stack = stack
     popup.graph_width = graph_width
     popup.stats_cmd = stats_cmd
+    popup.ng = args.number_graphs or 0
+    -- inititalize value buffers
+    popup.value_buffer = {}
+    popup.value_buffer.groups = {}
+    for i = 1, popup.ng do
+        popup.value_buffer.groups[i] = {}
+    end
 
-    popup.update = function()
+    popup.update = function(update_data)
         -- update graph data
-        if data_fun then
-            local data = data_fun()
+        local data = update_data
+        if data ~= nil then
             if type(data) ~= "table" then
                 data = {data}
             end
-            if #data > 1 and stack then
-                for i = 1, #data do
-                    popup.graphs[1]:add_value(data[i],i)
+            -- save data into local buffer
+            for i = 1, popup.ng do
+                table.insert(popup.value_buffer.groups[i], data[i])
+                -- remove from front if full
+                while #popup.value_buffer.groups[i] > popup.graph_width do
+                    table.remove(popup.value_buffer.groups[i], 1)
                 end
-            else
-                for i = 1, #data do
-                    popup.graphs[i]:add_value(data[i])
+            end
+            -- update graphs in popup if its currently active
+            if popup.box.visible then
+                if #data > 1 and stack then
+                    for i = 1, #data do
+                        popup.graphs[1]:add_value(data[i],i)
+                    end
+                else
+                    for i = 1, #data do
+                        popup.graphs[i]:add_value(data[i])
+                    end
                 end
             end
         end
         -- update stats
-        if stats_cmd and popup.stats then
+        if stats_cmd and popup.stats and popup.box.visible then
             -- get new stats and assign to textbox
             local stats = awful.util.pread(stats_cmd)
             if stats:sub(-1) == '\n' then
@@ -324,19 +348,9 @@ function sysmon.create_popup(widget, args)
         end
     end
 
-    ng = 0
-    if data_fun then
-        local test_data = data_fun()
-        if type(test_data) == "table" then
-            ng = #test_data
-        else
-            ng = 1
-        end
-    end
-
     -- default max
     if max_value == nil and stack then
-        max_value = 100*ng
+        max_value = 100*popup.ng
     else
         max_value = 100
     end
@@ -349,7 +363,7 @@ function sysmon.create_popup(widget, args)
 
         -- create graph(s)
         popup.graphs = {}
-        if ng > 1 and stack then
+        if popup.ng > 1 and stack then
             -- create single stack graph
             local graph =  awful.widget.graph()
             graph:set_width(graph_width)
@@ -358,8 +372,8 @@ function sysmon.create_popup(widget, args)
             graph:set_stack(true)
             -- generate colors based on color gradient
             local stack_colors = {}
-            for i = 1, ng do
-                table.insert(stack_colors, gradient(beautiful.bg_normal, beautiful.fg_focus, 0, ng+3, i+2))
+            for i = 1, popup.ng do
+                table.insert(stack_colors, gradient(beautiful.bg_normal, beautiful.fg_focus, 0, popup.ng+3, i+2))
             end
             graph:set_stack_colors(stack_colors);
             graph:set_max_value(max_value)
@@ -367,7 +381,7 @@ function sysmon.create_popup(widget, args)
             popup.graphs[1] = graph
         else
             assert(not stack, "can't stack 1 graph")
-            for i = 1, ng do
+            for i = 1, popup.ng do
                 local graph = awful.widget.graph()
                 graph:set_width(graph_width)
                 graph:set_height(graph_height)
@@ -414,18 +428,6 @@ function sysmon.create_popup(widget, args)
         popup.box:set_widget(popup.mar)
 
 
-        -- create timer
-        -- TODO: only one timer per system component (cpu,mem)
-        --       otherwise the measurement data interferes with each other
-        -- TODO: create the timer outside and call the popups update function
-        local tm = timer({ timeout = 1 })
-        if tm.connect_signal then
-            tm:connect_signal("timeout", popup.update)
-        else
-            tm:add_signal("timeout", popup.update)
-        end
-        popup.timer = tm
-
         -- connect mouse signals
         widget:connect_signal('mouse::enter', function ()
                 -- open popup
@@ -448,22 +450,15 @@ function sysmon.create_popup(widget, args)
 end
 
 function sysmon.open_popup(popup)
-    local values = popup.parent_widget.values
-    -- TODO: could be zero graphs (ng=0)
-    local ng = 1
-    if values.groups then
-        ng = #values.groups
-    else
-        local vals = values
-        values.groups = {}
-        values.groups[1] = vals
-    end
+    local values = popup.value_buffer
 
     -- prefill graph with zeros if not full
-    if #values.groups[1] < popup.graph_width then
-        for g = 1, ng do
-            for i = #values.groups[g]+1, popup.graph_width do
-                table.insert(values.groups[g],0,1)
+    if popup.ng > 0 then
+        if #values.groups[1] < popup.graph_width then
+            for g = 1, popup.ng do
+                for i = #values.groups[g]+1, popup.graph_width do
+                    table.insert(values.groups[g],0,1)
+                end
             end
         end
     end
@@ -484,42 +479,41 @@ function sysmon.open_popup(popup)
     -- fill graph
     if values.groups ~= nil and popup.stack then
         for i = 1, #values.groups[1] do
-            for g = 1, ng do
+            for g = 1, popup.ng do
                 assert(values.groups[g][i] ~= nil, "ups")
                 popup.graphs[1]:add_value(values.groups[g][i], g)
             end
         end
     else
-        for g = 1, ng do
+        for g = 1, popup.ng do
             for i = 1, #values.groups[g] do
                 popup.graphs[g]:add_value(values.groups[g][i])
             end
         end
     end
     popup.box.visible = true
-    popup.timer:start()
 end
 
 function sysmon.close_popup(popup)
-    popup.timer:stop()
     popup.box.visible = false
 end
+
 
 function sysmon.get_cpu_widget(beautiful, use_icon, use_graphs, graph_vertical)
     vicious.cache(vicious.widgets.cpu)
     -- create layout
-    local cpu_widget_layout = wibox.layout.fixed.horizontal()
+    local cpu_widget = wibox.layout.fixed.horizontal()
 
     -- get number of CPUs
     local n_cpus = #vicious.widgets.cpu()-1
 
     if use_icon then
-        cpu_widget_layout:add(wibox.widget.imagebox(beautiful.widget_cpu))
+        cpu_widget:add(wibox.widget.imagebox(beautiful.widget_cpu))
     end
 
     -- create cpu text widget
     cpu_text = wibox.widget.textbox()
-    cpu_widget_layout:add(cpu_text)
+    cpu_widget:add(cpu_text)
 
     -- add graphs
     if use_graphs then
@@ -555,26 +549,23 @@ function sysmon.get_cpu_widget(beautiful, use_icon, use_graphs, graph_vertical)
                 cpu_bars:add(cpu_bars_widgets[i])
             end
         end
-        cpu_widget_layout:add(cpu_bars)
+        cpu_widget:add(cpu_bars)
     end
 
 
-    -- create pseudo widget
-    local cpu_pseudowidget = wibox.widget.textbox()
-    cpu_widget_layout.values = {}
+    cpu_widget.popup = sysmon.create_popup(cpu_widget, {
+        stats_cmd = '/bin/ps --sort=-%cpu,-%mem -eo fname,%cpu,%mem | head -n 6',
+        stack = true,
+        title = 'CPU',
+        number_graphs = n_cpus
+    })
 
-    if n_cpus > 1 then
-        cpu_widget_layout.values.groups = {}
-        for i = 1, n_cpus do
-            cpu_widget_layout.values.groups[i] = {}
-        end
-    end
 
     -- register cpuwidgets
-    vicious.register(cpu_pseudowidget , vicious.widgets.cpu,
-    function (widget, args)
+    cpu_widget.update = function ()
+        -- use vicious to get current CPU info
+        local args = vicious.widgets.cpu()
         -- display the total cpu consumption sum in text field
-        -- -- TODO: variable!
         local cpu_sum = 0
         for i = 1, n_cpus do
             cpu_sum = cpu_sum + args[i+1]
@@ -591,35 +582,23 @@ function sysmon.get_cpu_widget(beautiful, use_icon, use_graphs, graph_vertical)
                 cpu_bars_widgets[i]:set_value(args[i+1])
             end
         end
-        -- add total value to value memory
-        -- TODO: impelement as circular buffer for efficiency
-        if n_cpus > 1 then
-            for i = 1, n_cpus do
-                table.insert(cpu_widget_layout.values.groups[i], args[i+1])
-            end
-        else
-            table.insert(cpu_widget_layout.values, cpu_sum)
-        end
-        -- TODO: clear old values
-        return ""
+
+        -- update the popup
+        table.remove(args, 1)
+        cpu_widget.popup.update(args)
     end
-    , 1)
 
-    local popup = sysmon.create_popup(cpu_widget_layout, {
-        stats_cmd = '/bin/ps --sort=-%cpu,-%mem -eo fname,%cpu,%mem | head -n 6',
-        stack = true,
-        title = 'CPU',
-        -- TODO: make sure the widgets.cpu() function is only called once
-        -- per iteration
-        data_function = function ()
-            local data = vicious.widgets.cpu()
-            -- remove first entry
-            table.remove(data, 1)
-            return data
-        end
-    })
+    -- create timer
+    local tm = timer({ timeout = 1 })
+    if tm.connect_signal then
+        tm:connect_signal("timeout", cpu_widget.update)
+    else
+        tm:add_signal("timeout", cpu_widget.update)
+    end
+    cpu_widget.timer = tm
+    cpu_widget.timer:start()
 
-    return cpu_widget_layout
+    return cpu_widget
 end
 
 
