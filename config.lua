@@ -51,8 +51,8 @@ audio_controller = "pavucontrol"
 audio_device = "alsa_input.pci-0000_00_1b.0.analog-stereo"
 
 -- network device for the up/download stats
--- net_device = "eth0"
-net_device = "wlan0"
+net_device = "eth0"
+-- net_device = "wlan0"
 
 -- the theme to use (the folder in .config/awesome/themes/)
 -- use_theme = "default"

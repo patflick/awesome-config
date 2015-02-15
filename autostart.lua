@@ -50,7 +50,8 @@ run_once('xrdb', '-load ~/.Xresources')
 -- (for unlock of settings windows and installing of updates)
 -- refer to:
 -- https://bugs.launchpad.net/ubuntu/+source/synaptic/+bug/912857
-run_once('/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1')
+--run_once('/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1')
+run_once('/usr/lib/policykit-1/polkitd')
 
 -- start dropbox
 run_once('dropbox', 'start')
@@ -69,7 +70,7 @@ run_once('nm-applet')
 run_once('system-config-printer-applet')
 
 -- automount (gnome fallback dependency!)
-run_once('/usr/lib/gnome-settings-daemon/gnome-fallback-mount-helper')
+-- run_once('/usr/lib/gnome-settings-daemon/gnome-fallback-mount-helper')
 
 -- touchpad settings app
-run_once('/opt/extras.ubuntu.com/touchpad-indicator/bin/touchpad-indicator')
+-- run_once('/opt/extras.ubuntu.com/touchpad-indicator/bin/touchpad-indicator')
