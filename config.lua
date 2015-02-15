@@ -24,7 +24,7 @@ browser="chromium-browser"
 -- screen_lock_cmd = "gnome-screensaver-command -l"
 screen_lock_cmd = "i3lock -c 000000"
 -- auto lock after 5 minutes
-screen_autolock_time = "1"
+screen_autolock_time = "5"
 screen_autolock_warn_sec = "10"
 
 
@@ -51,8 +51,8 @@ audio_controller = "pavucontrol"
 audio_device = "alsa_input.pci-0000_00_1b.0.analog-stereo"
 
 -- network device for the up/download stats
--- net_device = "eth0"
-net_device = "wlan0"
+net_device = "eth0"
+-- net_device = "wlan0"
 
 -- the theme to use (the folder in .config/awesome/themes/)
 -- use_theme = "default"
