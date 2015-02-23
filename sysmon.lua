@@ -62,7 +62,7 @@ function sysmon.get_vol_widget(beautiful, use_icon, use_graphs, audio_device)
         vol_widget_layout:add(vol_icon)
     end
 
-    -- add text 
+    -- add text
     local vol_text = wibox.widget.textbox()
     vol_widget_layout:add(vol_text)
 
@@ -246,23 +246,30 @@ function sysmon.get_mem_widget(beautiful, use_icon, use_graphs)
 
     -- create popup
     mem_widget.popup = sysmon.create_popup(mem_widget, {
-            stats_cmd = '/bin/ps --sort=-%mem -eo fname,%mem | head -n 6',
-            stack = false,
+            stats_cmd = "/bin/ps --sort=-%mem -eo fname,%mem | awk '{arr[$1]+=$2} END {for (i in arr) {print i,arr[i]}}' | sort -nk2r | column -t | head -n 6",
+--            stats_cmd = "/bin/ps --sort=-%mem -eo fname,%mem | head -n 6",
+            stack = true,
             title = 'RAM',
-            number_graphs = 1
+            number_graphs = 2,
+            max_value = 100
              })
 
     mem_widget.update = function()
         local args = vicious.widgets.mem()
+        -- use percentage of buffered+used memory instead of used
+        --local membuf = math.floor(args[9] * 100.0 / args[3])
+        local memuse = math.floor(args[2] * 100.0 / args[3])
+        local membufuse = math.floor((args[9] - args[2]) * 100.0 / args[3])
+        local membuf = memuse + membufuse
         if use_icon then
-            mem_text:set_text(string.format("%3u%% ", args[1]))
+            mem_text:set_text(string.format("%3u%% ", membuf))
         else
-            mem_text:set_text(string.format("mem: %3u%% ", args[1]))
+            mem_text:set_text(string.format("mem: %3u%% ", membuf))
         end
         if use_graphs then
-            mem_widget.graph:set_value(args[1])
+            mem_widget.graph:set_value(membuf)
         end
-        mem_widget.popup.update(args[1])
+        mem_widget.popup.update({memuse, membufuse})
     end
 
     -- create timer
@@ -294,6 +301,7 @@ function sysmon.create_popup(widget, args)
     local stats_cmd = args.stats_cmd or nil
     local title = args.title or ''
     local max_value = args.max_value
+    local scale = args.scale or false
     local stack = args.stack or false
     local popup = {}
 
@@ -349,9 +357,9 @@ function sysmon.create_popup(widget, args)
     end
 
     -- default max
-    if max_value == nil and stack then
+    if max_value == nil and scale == false and stack then
         max_value = 100*popup.ng
-    else
+    elseif scale == false then
         max_value = 100
     end
 
@@ -368,6 +376,11 @@ function sysmon.create_popup(widget, args)
             local graph =  awful.widget.graph()
             graph:set_width(graph_width)
             graph:set_height(graph_height)
+            if scale then
+                graph:set_scale(scale)
+            else
+                graph:set_max_value(max_value)
+            end
             graph:set_background_color(beautiful.background_normal)
             graph:set_stack(true)
             -- generate colors based on color gradient
@@ -376,7 +389,6 @@ function sysmon.create_popup(widget, args)
                 table.insert(stack_colors, gradient(beautiful.bg_normal, beautiful.fg_focus, 0, popup.ng+3, i+2))
             end
             graph:set_stack_colors(stack_colors);
-            graph:set_max_value(max_value)
             graph:set_border_color(beautiful.fg_focus)
             popup.graphs[1] = graph
         else
@@ -385,9 +397,13 @@ function sysmon.create_popup(widget, args)
                 local graph = awful.widget.graph()
                 graph:set_width(graph_width)
                 graph:set_height(graph_height)
+                if scale then
+                    graph:set_scale(scale)
+                else
+                    graph:set_max_value(max_value)
+                end
                 graph:set_background_color(beautiful.bg_normal)
                 graph:set_color(gradient(beautiful.bg_normal, beautiful.fg_focus, 0, 2, 1))
-                graph:set_max_value(max_value)
                 graph:set_border_color(beautiful.fg_focus)
                 popup.graphs[i] = graph
             end
@@ -464,11 +480,13 @@ function sysmon.open_popup(popup)
     end
 
     -- get new stats and assign to textbox
-    local stats = awful.util.pread(popup.stats_cmd)
-    if stats:sub(-1) == '\n' then
-        stats = stats:sub(1,-2) -- trim trailing character
+    if stats_cmd then 
+        local stats = awful.util.pread(popup.stats_cmd)
+        if stats:sub(-1) == '\n' then
+            stats = stats:sub(1,-2) -- trim trailing character
+        end
+        popup.stats:set_markup(stats)
     end
-    popup.stats:set_markup(stats)
 
     -- figure out how big the widget is
     local w, h = wibox.layout.base.fit_widget(popup.mar,1000,1000)
@@ -603,62 +621,121 @@ end
 
 
 function sysmon.get_net_widgets(beautiful, use_icon, use_graphs, net_device)
-
     -- enable caching for netwidgets
-    vicious.cache(vicious.widgets.net)
+    --vicious.cache(vicious.widgets.net)
 
-    -- TODO: detect correct device:
-    local devcmd = "netstat -nr | grep '^0.0.0.0' | awk '{ print $8 }' | head -n 1"
 
     -- create the horizontal layout for the network widgets
-    local netwidgets = {}
+    --local netwidgets = {}
 
-    local net_texts = {nil, nil}
+    -- create layout
+    local net_widget = wibox.layout.fixed.horizontal()
 
-    for i,up_down in pairs({"down", "up"}) do
-
-
-        net_texts[i] = wibox.widget.textbox()
-        local netwidget_layout = wibox.layout.fixed.horizontal()
-
-        if use_icon then
-            if up_down == "up" then
-                net_icon = wibox.widget.imagebox(beautiful.widget_net_up)
-            else
-                net_icon = wibox.widget.imagebox(beautiful.widget_net_down)
-            end
-            netwidget_layout:add(net_icon)
-        end
-        netwidget_layout:add(net_texts[i])
-        if use_graphs then
-            netwidget = awful.widget.graph()
-            -- Graph properties
-            netwidget:set_width(50)
-            -- netwidget_down:set_background_color("#494B4F")
-            netwidget:set_background_color("#333333")
-            netwidget:set_color("#CC33FF")
-            netwidget:set_scale(true)
-            --netwidget_down:set_gradient_colors({ "#FF5656", "#88A175", "#AECF96" })
-            -- Register widget
-            vicious.register(netwidget, vicious.widgets.net, "${" .. net_device .. " " .. up_down .. "_kb}", update_intervall)
-            netwidget_layout:add(netwidget)
-        end
-
-        table.insert(netwidgets, netwidget_layout)
+    if use_icon then
+        net_widget:add(wibox.widget.imagebox(beautiful.widget_net))
     end
 
-    local pseudo_widget = wibox.widget.textbox()
-    vicious.register(pseudo_widget, vicious.widgets.net,
-        function (widget, args)
-            local kb_down = args["{" .. net_device .. " down_kb}"]
-            local kb_up = args["{" .. net_device .. " up_kb}"]
-            net_texts[1]:set_text(net_string(kb_down))
-            net_texts[2]:set_text(net_string(kb_up))
-            return ""
-        end
-        , update_intervall)
+    -- create cpu text widget
+    net_text = wibox.widget.textbox()
+    net_widget:add(net_text)
 
-    return netwidgets[1], netwidgets[2]
+    net_widget.popup = sysmon.create_popup(net_widget, {
+        --stats_cmd = '/bin/ps --sort=-%cpu,-%mem -eo fname,%cpu,%mem | head -n 6',
+        stack = false,
+        scale = true,
+        title = 'NET',
+        number_graphs = 2
+    })
+
+--    local net_texts = {nil, nil}
+
+    -- register cpuwidgets
+    net_widget.update = function ()
+        -- use vicious to get current CPU info
+        local args = vicious.widgets.net()
+        -- detect correct device:
+        local netif_cmd = "netstat -nr | grep '^0.0.0.0' | awk '{ print $8 }' | head -n 1"
+        local cur_netif = awful.util.pread(netif_cmd)
+        if cur_netif:sub(-1) == '\n' then
+            cur_netif = cur_netif:sub(1,-2) -- trim trailing character
+        end
+        -- display the total cpu consumption sum in text field
+        if cur_netif == "" then
+            net_text:set_text("No Connection")
+        else
+            local kb_down = args["{" .. cur_netif .. " down_kb}"]
+            local kb_up = args["{" .. cur_netif .. " up_kb}"]
+            net_text:set_text("▼" .. net_string(kb_down) .. " ▲" .. net_string(kb_up))
+        end
+        --net_texts[2]:set_text(net_string(kb_up))
+
+        --if use_icon then
+        --    cpu_text:set_text(string.format("%3u%% ", cpu_sum))
+        --else
+        --    cpu_text:set_text(string.format("cpus: %3u%% ", cpu_sum))
+        --end
+
+
+        -- update the popup
+        --table.remove(args, 1)
+        net_widget.popup.update({kb_down, kb_up})
+    end
+
+    -- create timer
+    local tm = timer({ timeout = 1 })
+    if tm.connect_signal then
+        tm:connect_signal("timeout", net_widget.update)
+    else
+        tm:add_signal("timeout", net_widget.update)
+    end
+    net_widget.timer = tm
+    net_widget.timer:start()
+
+    --for i,up_down in pairs({"down", "up"}) do
+
+
+    --    net_texts[i] = wibox.widget.textbox()
+    --    local netwidget_layout = wibox.layout.fixed.horizontal()
+
+    --    if use_icon then
+    --        if up_down == "up" then
+    --            net_icon = wibox.widget.imagebox(beautiful.widget_net_up)
+    --        else
+    --            net_icon = wibox.widget.imagebox(beautiful.widget_net_down)
+    --        end
+    --        netwidget_layout:add(net_icon)
+    --    end
+    --    netwidget_layout:add(net_texts[i])
+    --    if use_graphs then
+    --        netwidget = awful.widget.graph()
+    --        -- Graph properties
+    --        netwidget:set_width(50)
+    --        -- netwidget_down:set_background_color("#494B4F")
+    --        netwidget:set_background_color("#333333")
+    --        netwidget:set_color("#CC33FF")
+    --        netwidget:set_scale(true)
+    --        --netwidget_down:set_gradient_colors({ "#FF5656", "#88A175", "#AECF96" })
+    --        -- Register widget
+    --        vicious.register(netwidget, vicious.widgets.net, "${" .. net_device .. " " .. up_down .. "_kb}", update_intervall)
+    --        netwidget_layout:add(netwidget)
+    --    end
+
+    --    table.insert(netwidgets, netwidget_layout)
+    --end
+
+    --local pseudo_widget = wibox.widget.textbox()
+    --vicious.register(pseudo_widget, vicious.widgets.net,
+    --    function (widget, args)
+    --        local kb_down = args["{" .. net_device .. " down_kb}"]
+    --        local kb_up = args["{" .. net_device .. " up_kb}"]
+    --        net_texts[1]:set_text(net_string(kb_down))
+    --        net_texts[2]:set_text(net_string(kb_up))
+    --        return ""
+    --    end
+    --    , update_intervall)
+
+    --return netwidgets[1], netwidgets[2]
+    return net_widget
 end
 
 
@@ -671,14 +748,14 @@ function sysmon.get_widgets(beautiful, use_icon, use_graphs, update_intervall, n
     local memwidget = sysmon.get_mem_widget(beautiful, use_icon, true)
 
     -- get network widget
-    local netwidget1, netwidget2 = sysmon.get_net_widgets(beautiful, use_icon, true, net_device)
+    local netwidget = sysmon.get_net_widgets(beautiful, use_icon, true, net_device)
 
     -- get battery widget but only if there is a battery
     if (vicious.widgets.bat("", "BAT0")[2] > 0) then
         batwidget = sysmon.get_bat_widget(beautiful, use_icon, true)
     end
 
-    return {netwidget1, netwidget2, memwidget, cpuwidget, batwidget}
+    return {netwidget, memwidget, cpuwidget, batwidget}
 end
 
 return sysmon
