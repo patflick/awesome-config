@@ -660,11 +660,13 @@ function sysmon.get_net_widgets(beautiful, use_icon, use_graphs, net_device)
             cur_netif = cur_netif:sub(1,-2) -- trim trailing character
         end
         -- display the total cpu consumption sum in text field
+        local kb_down = 0
+        local kb_up = 0
         if cur_netif == "" then
             net_text:set_text("No Connection")
         else
-            local kb_down = args["{" .. cur_netif .. " down_kb}"]
-            local kb_up = args["{" .. cur_netif .. " up_kb}"]
+            kb_down = args["{" .. cur_netif .. " down_kb}"]
+            kb_up = args["{" .. cur_netif .. " up_kb}"]
             net_text:set_text("▼" .. net_string(kb_down) .. " ▲" .. net_string(kb_up))
         end
         --net_texts[2]:set_text(net_string(kb_up))
