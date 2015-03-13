@@ -684,7 +684,7 @@ function sysmon.get_net_widgets(beautiful, use_icon, use_graphs, net_device)
     end
 
     -- create timer
-    local tm = timer({ timeout = 1 })
+    local tm = timer({ timeout = 3 })
     if tm.connect_signal then
         tm:connect_signal("timeout", net_widget.update)
     else
