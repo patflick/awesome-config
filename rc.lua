@@ -42,12 +42,6 @@ require("config")
 
 -- Load Debian menu entries
 
--- Use Free Desktop for debian menu (https://github.com/terceiro/awesome-freedesktop)
--- part of the repo as git submodule
-require('awesome-freedesktop.freedesktop.utils')
-freedesktop.utils.terminal = terminal  -- default: "xterm"
-freedesktop.utils.icon_theme = 'gnome' -- look inside /usr/share/icons/, default: nil (don't use icon theme)
-require('awesome-freedesktop.freedesktop.menu')
 
 
 
@@ -181,26 +175,23 @@ end
 -- {{{ Menu
 -- Create a laucher widget and a main menu
 
--- create Freedesktop main menu
-menu_items = freedesktop.menu.new()
+menu_items = require("menugen").build_menu()
+local menu_utils = require("menubar.utils")
 myawesomemenu = {
-   { "manual", terminal .. " -e man awesome", freedesktop.utils.lookup_icon({ icon = 'help' }) },
-   { "edit config", editor_cmd .. " " .. awesome.conffile, freedesktop.utils.lookup_icon({ icon = 'package_settings' }) },
-   { "restart", awesome.restart, freedesktop.utils.lookup_icon({ icon = 'gtk-refresh' }) },
-   { "quit", awesome.quit, freedesktop.utils.lookup_icon({ icon = 'gtk-quit' }) }
+   { "manual", terminal .. " -e man awesome", menu_utils.lookup_icon('help') },
+   { "edit config", editor_cmd .. " " .. awesome.conffile, menu_utils.lookup_icon('package_settings') },
+   { "restart", awesome.restart, menu_utils.lookup_icon('gtk-refresh') },
+   { "quit", awesome.quit, menu_utils.lookup_icon('gtk-quit') }
 }
 table.insert(menu_items, { "awesome", myawesomemenu, beautiful.awesome_icon })
-table.insert(menu_items, { "open terminal", terminal, freedesktop.utils.lookup_icon({icon = 'terminal'}) })
-
-
+table.insert(menu_items, { "open terminal", terminal, menu_utils.lookup_icon('terminal')})
 mymainmenu = awful.menu.new({ items = menu_items })
-
-
-
 
 mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
                                      menu = mymainmenu })
+
 -- }}}
+
 
 -- {{{ Wibox
 -- Create a textclock widget
@@ -475,5 +466,4 @@ client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_n
 --    Autostart applets and apps  --
 ------------------------------------
 require('autostart')
-
 
