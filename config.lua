@@ -31,9 +31,13 @@ screen_autolock_warn_sec = "10"
 -- shutdown, restart and hybernate (using ubus, ConsoleKit and UPower)
 shutdown_command = 'dbus-send --system --print-reply --dest="org.freedesktop.ConsoleKit" /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Stop'
 reboot_command = 'dbus-send --system --print-reply --dest="org.freedesktop.ConsoleKit" /org/freedesktop/ConsoleKit/Manager org.freedesktop.ConsoleKit.Manager.Restart'
-suspend_command = 'dbus-send --system --print-reply --dest="org.freedesktop.UPower" /org/freedesktop/UPower org.freedesktop.UPower.Suspend'
-suspend_command = 'dbus-send --system --print-reply --dest="org.freedesktop.UPower" /org/freedesktop/UPower org.freedesktop.UPower.Hibernate'
+suspend_cmd = 'dm-tool lock && systemctl suspend'
+hibernate_cmd = 'systemctl hibernate'
+hybrid_cmd = 'dm-tool lock && systemctl hybrid-sleep'
 
+switchuser_cmd = 'dm-tool switch-to-greeter'
+guestsession_cmd = 'dm-tool switch-to-guest'
+lock_cmd = 'dm-tool lock'
 
 
 
@@ -48,7 +52,7 @@ audio_controller = "pavucontrol"
 -- get the device name with the command:
 --    pactl list | grep -A2 'Source #' | grep 'Name: '
 -- TODO: might be deprecated:
-audio_device = "alsa_input.pci-0000_00_1b.0.analog-stereo"
+audio_device = "alsa_output.pci-0000_00_1b.0.analog-stereo"
 
 -- network device for the up/download stats
 net_device = "eth0"

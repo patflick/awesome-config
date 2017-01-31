@@ -50,8 +50,8 @@ run_once('xrdb', '-load ~/.Xresources')
 -- (for unlock of settings windows and installing of updates)
 -- refer to:
 -- https://bugs.launchpad.net/ubuntu/+source/synaptic/+bug/912857
---run_once('/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1')
-run_once('/usr/lib/policykit-1/polkitd')
+run_once('/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1')
+-- run_once('/usr/lib/policykit-1/polkitd')
 
 -- start dropbox
 run_once('dropbox', 'start')

@@ -183,13 +183,28 @@ myawesomemenu = {
    { "restart", awesome.restart, menu_utils.lookup_icon('gtk-refresh') },
    { "quit", awesome.quit, menu_utils.lookup_icon('gtk-quit') }
 }
+mysessionmenuitems = {
+   { "reboot", reboot_command },
+   { "shutdown", shutdown_command },
+   { "suspend ram", function() awful.util.spawn_with_shell(suspend_cmd) end},
+   { "suspend dsk", function() awful.util.spawn_with_shell(hybernate_cmd) end},
+   { "suspend hybrid", function() awful.util.spawn_with_shell(hybrid_cmd) end},
+   { "", "" },
+   { "lock", lock_cmd},
+   { "switch user", switchuser_cmd},
+   { "guest session", guestsession_cmd}
+}
 table.insert(menu_items, { "awesome", myawesomemenu, beautiful.awesome_icon })
+table.insert(menu_items, { "session", mysessionmenuitems})
 table.insert(menu_items, { "open terminal", terminal, menu_utils.lookup_icon('terminal')})
 mymainmenu = awful.menu.new({ items = menu_items })
 
 mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
                                      menu = mymainmenu })
 
+-- create session menu (shutdown, reboot, switch user, guest session etc)
+sessionitems = require("menugen").build_menu()
+mysessionmenu = awful.menu.new({ items = mysessionmenuitems })
 -- }}}
 
 
@@ -355,7 +370,6 @@ for s = 1, screen.count() do
     mytaglist[s] = awful.widget.taglist(s, awful.widget.taglist.filter.all, mytaglist.buttons)
 
 
-
     -- Create the wibox
     mywiboxtop[s] = awful.wibox({ position = "top", height=beautiful.awful_widget_height, screen = s })
     -- Add widgets to the wibox - order matters
@@ -365,6 +379,12 @@ for s = 1, screen.count() do
     left_layout:add(mytaglist[s])
     left_layout:add(mypromptbox[s])
 
+    local mystatus = wibox.widget.textbox()
+    mystatus:set_text(" " .. awful.util.pread("id -u -n") .. " ")
+    mystatus:buttons(awful.util.table.join(
+                    awful.button({ }, 1, function () mysessionmenu:toggle() end),
+                    awful.button({ }, 3, function () mysessionmenu:toggle() end)
+                    ))
 
     -- put together all the widgets
     -- (right to left)
@@ -391,6 +411,7 @@ for s = 1, screen.count() do
     right_layout = wibox.layout.fixed.horizontal()
     right_layout:add(combine_widgets({tasklist_layout[s]}))
     right_layout:add(widgets_layout)
+    right_layout:add(mystatus)
 
 
     local top_layout = wibox.layout.align.horizontal()
